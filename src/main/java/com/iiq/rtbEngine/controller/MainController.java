@@ -7,64 +7,25 @@ import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.iiq.rtbEngine.models.ActionType;
+import com.iiq.rtbEngine.models.UrlParam;
+import com.iiq.rtbEngine.service.ActionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import static com.iiq.rtbEngine.models.ActionType.ATTRIBUTION_REQUEST;
+import static com.iiq.rtbEngine.util.Common.*;
 
 
 @RestController
 public class MainController {
 
-	private static final String ACTION_TYPE_VALUE = "act";
-	private static final String ATTRIBUTE_ID_VALUE = "atid";
-	private static final String PROFILE_ID_VALUE = "pid";
-	
-	private enum UrlParam {
-		ACTION_TYPE(ACTION_TYPE_VALUE),
-		ATTRIBUTE_ID(ATTRIBUTE_ID_VALUE),
-		PROFILE_ID(PROFILE_ID_VALUE),
-		;
-		
-		private final String value;
-		
-		private UrlParam(String value) {
-			this.value = value;
-		}
-		
-		public String getValue() {
-			return value;
-		}
-	}
-	
-	private enum ActionType {
-		ATTRIBUTION_REQUEST(0),
-		BID_REQUEST(1),
-		;
-		
-		private int id;
-		private static Map<Integer, ActionType> idToRequestMap = new HashMap<>();
-		
-		static {
-			for(ActionType actionType : ActionType.values())
-				idToRequestMap.put(actionType.getId(), actionType);
-		}
-		
-		private int getId() {
-			return this.id;
-		}
-		
-		private ActionType(int id) {
-			this.id = id; 
-		}
-		
-		public static ActionType getActionTypeById(int id) {
-			return idToRequestMap.get(id);
-		}
-	}
-	
 	@Autowired
-	private DbManager dbManager;
+	private ActionService actionService;
 	
 	@PostConstruct
 	public void init() {
@@ -72,13 +33,21 @@ public class MainController {
 	}
 	
 	@GetMapping("/api")
-	public void getRequest(HttpServletRequest request, HttpServletResponse response, 
-			@RequestParam(name = ACTION_TYPE_VALUE,  required = true) int actionTypeId,
-			@RequestParam(name = ATTRIBUTE_ID_VALUE, required = false) Integer attributeId,
-			@RequestParam(name = PROFILE_ID_VALUE,   required = false) Integer profileId) {
+	public ResponseEntity getRequest(HttpServletRequest request, HttpServletResponse response,
+									 @RequestParam(name = ACTION_TYPE_VALUE,  required = true) int actionTypeId,
+									 @RequestParam(name = ATTRIBUTE_ID_VALUE, required = false) Integer attributeId,
+									 @RequestParam(name = PROFILE_ID_VALUE,   required = false) Integer profileId) {
 		
 		//GOOD LUCK! (;
-		
+
+		switch (ActionType.getActionTypeById(actionTypeId)){
+			case ATTRIBUTION_REQUEST:return actionService.saveAtribure(attributeId,profileId);
+			case BID_REQUEST:return actionService.getBid(attributeId,profileId);
+			default:
+				return new ResponseEntity(HttpStatus.BAD_REQUEST);
+		}
+
+
 	}
 	
 }
