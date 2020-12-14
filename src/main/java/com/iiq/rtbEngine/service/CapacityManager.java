@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class CapacityManager {
@@ -19,6 +20,7 @@ public class CapacityManager {
     DbManager dbManager;
     //profile_id,  map campaign capacity
     CopyOnWriteArrayList<Profile> profiles = new CopyOnWriteArrayList<>();
+    ReentrantLock profilesLock = new ReentrantLock();
     Map<Integer, CampaignConfig> allCampaignsConfigs = new HashMap<>();
 
     @PostConstruct
@@ -32,7 +34,7 @@ public class CapacityManager {
         HashMap<Integer, Integer> newMap = new HashMap<>();
         int updatedProfile = -1;
         if (!porfileExist) {
-            synchronized (profiles) {
+            profilesLock.lock();
                 //double check locking
                 if (!profiles.contains(profile)) {
                     //find first default campaign
@@ -42,6 +44,7 @@ public class CapacityManager {
                             newMap.put(firstMatchedId, campaignConfigFromDb.getCapacity() - 1);
                             profile.setCampaignsAndCapacity(newMap);
                             profiles.add(profile);
+                            profilesLock.unlock();
                             return firstMatchedId;
                         }
                     }
@@ -49,7 +52,7 @@ public class CapacityManager {
                     //profile not empy do the same as below
                     updatedProfile = decrementCapacityAndGetCampaign(profile, sortedCampaigns);
                 }
-            }
+
         } else {
             updatedProfile = decrementCapacityAndGetCampaign(profile, sortedCampaigns);
         }

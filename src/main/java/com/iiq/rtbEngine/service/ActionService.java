@@ -36,7 +36,7 @@ public class ActionService {
         if(allMatchedCampaigns==null || allMatchedCampaigns.size()==0){
             return new ResponseEntity(ResponseType.UNMATCHED.getValue(),HttpStatus.NOT_FOUND);
         }
-        //sort campaigns in queue according priority and after by id
+        //sort campaigns in map according priority and after by id
         Map<Integer, CampaignConfig> allCampaignsConfigs = dbManager.getAllCampaignsConfigs();
         List<Integer> sortedCampaigns = allCampaignsConfigs.entrySet().stream()
                 .filter((entry) -> allMatchedCampaigns.contains(entry.getKey()))
@@ -47,7 +47,7 @@ public class ActionService {
                     }
                     return compare;
                 }).map((y)->y.getKey()).collect(Collectors.toList()) ;
-        //remove campaigns with small or zero capacity
+        //filter campaigns with small or zero capacity
         Integer campaignId = capacityManager.getNotExidedCampaign(profileId,sortedCampaigns);
         if(campaignId==-1){
             return new ResponseEntity(ResponseType.CAPPED.getValue(),HttpStatus.NOT_FOUND);
