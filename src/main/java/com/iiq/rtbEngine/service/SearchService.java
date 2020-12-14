@@ -20,6 +20,10 @@ public class SearchService {
     public void initSearchStructure() {
         campaignAttributes = dbManager.getAllCampaignAttributes();
     }
+    //the best possible case scenario for containsALL is O(m) in HashSet
+    //but convertation list to HasSet cost O(n)
+    //in particular complexity is O(n*log(n) + m*log(m)) for unsorted ArrayList
+    //where n - campaigns attributes m-current profile attributes
     public List<Integer> findAllMatchedCampaigns(List<Integer> attributes){
         List matchedCampaigns = new LinkedList();
         if(attributes==null || attributes.size()<1){
