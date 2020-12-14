@@ -4,6 +4,8 @@ public class Common {
     public static final String ACTION_TYPE_VALUE = "act";
     public static final String ATTRIBUTE_ID_VALUE = "atid";
     public static final String PROFILE_ID_VALUE = "pid";
+    public static final String TYPE_UNMATCHED = "unmatched";
+    public static final String TYPE_CAPPED = "capped";
 
 
 }

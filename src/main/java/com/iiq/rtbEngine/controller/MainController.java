@@ -1,14 +1,6 @@
 package com.iiq.rtbEngine.controller;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.iiq.rtbEngine.models.ActionType;
-import com.iiq.rtbEngine.models.UrlParam;
 import com.iiq.rtbEngine.service.ActionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,7 +9,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.iiq.rtbEngine.models.ActionType.ATTRIBUTION_REQUEST;
+import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import static com.iiq.rtbEngine.util.Common.*;
 
 
@@ -26,7 +21,7 @@ public class MainController {
 
 	@Autowired
 	private ActionService actionService;
-	
+
 	@PostConstruct
 	public void init() {
 		//initialize stuff after application finished start up
@@ -41,8 +36,8 @@ public class MainController {
 		//GOOD LUCK! (;
 
 		switch (ActionType.getActionTypeById(actionTypeId)){
-			case ATTRIBUTION_REQUEST:return actionService.saveAtribure(attributeId,profileId);
-			case BID_REQUEST:return actionService.getBid(attributeId,profileId);
+			case ATTRIBUTION_REQUEST:return actionService.updateProfile(attributeId,profileId);
+			case BID_REQUEST:return actionService.findCampaign(profileId);
 			default:
 				return new ResponseEntity(HttpStatus.BAD_REQUEST);
 		}
