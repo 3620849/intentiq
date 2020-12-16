@@ -7,20 +7,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class CapacityManager {
     @Autowired
     DbManager dbManager;
     //profile_id,  map campaign capacity
-    CopyOnWriteArrayList<Profile> profiles = new CopyOnWriteArrayList<>();
-    ReentrantLock profilesLock = new ReentrantLock();
+    ConcurrentHashMap<Integer,Profile> profiles = new ConcurrentHashMap<>();
     Map<Integer, CampaignConfig> allCampaignsConfigs = new HashMap<>();
 
     @PostConstruct
@@ -29,42 +25,26 @@ public class CapacityManager {
     }
 
     public Integer getNotExidedCampaign(Integer profileId, List<Integer> sortedCampaigns) {
-        Profile profile = new Profile(profileId);
-        boolean porfileExist = profiles.contains(profile);
         HashMap<Integer, Integer> newMap = new HashMap<>();
-        int updatedProfile = -1;
-        if (!porfileExist) {
-            profilesLock.lock();
-                //double check locking
-                if (!profiles.contains(profile)) {
-                    //find first default campaign
-                    for (Integer firstMatchedId : sortedCampaigns) {
-                        CampaignConfig campaignConfigFromDb = allCampaignsConfigs.get(firstMatchedId);
-                        if (campaignConfigFromDb != null && campaignConfigFromDb.getCapacity() - 1 >= 0) {
-                            newMap.put(firstMatchedId, campaignConfigFromDb.getCapacity() - 1);
-                            profile.setCampaignsAndCapacity(newMap);
-                            profiles.add(profile);
-                            profilesLock.unlock();
-                            return firstMatchedId;
-                        }
-                    }
-                } else {
-                    //profile not empy do the same as below
-                    updatedProfile = decrementCapacityAndGetCampaign(profile, sortedCampaigns);
+        if(!profiles.containsKey(profileId)){
+            Profile profile = new Profile(profileId);
+            for (Integer firstMatchedId : sortedCampaigns) {
+                CampaignConfig campaignConfigFromDb = allCampaignsConfigs.get(firstMatchedId);
+                if (campaignConfigFromDb != null && campaignConfigFromDb.getCapacity()>= 0) {
+                    newMap.put(firstMatchedId, campaignConfigFromDb.getCapacity());
+                    profile.setCampaignsAndCapacity(newMap);
                 }
-
-        } else {
-            updatedProfile = decrementCapacityAndGetCampaign(profile, sortedCampaigns);
+            }
+            //if profile not in data structure we create new profile with all default capacity and save
+            profiles.putIfAbsent(profileId,profile);
         }
-        return updatedProfile;
+        //decrement capacity from data structure
+        return decrementCapacityAndGetCampaign(profileId, sortedCampaigns);
     }
 
-    private int decrementCapacityAndGetCampaign(Profile profile, List<Integer> sortedCampaigns) {
-        for (int i = 0; i < profiles.size(); ++i) {
-            if (profiles.get(i).equals(profile)) {
-
+    private int decrementCapacityAndGetCampaign(Integer profileId, List<Integer> sortedCampaigns) {
                 //get list of campaings from map
-                Profile localStorageProfile = profiles.get(i);
+                Profile localStorageProfile = profiles.get(profileId);
                 Lock lock = localStorageProfile.getLock();
                 lock.lock();
                     HashMap<Integer, Integer> campaignsAndCapacity = localStorageProfile.getCampaignsAndCapacity();
@@ -89,8 +69,7 @@ public class CapacityManager {
                             }
                         }
                     }
-            }
-        }
+
         //if no decrement happened return -1;
         return -1;
     }
