@@ -30,10 +30,11 @@ public class SearchService {
     }
 
     //explanation
-    //when starting to search we generate all possible variants of profiles attributes O(m*(2^m)) where m is number of attributes
+    //when starting to search we generate all possible variants of profiles attributes O(mlogm+m*(2^m)) where m is number of attributes
     //and searching this attributes in campaignAttributes hasmap where key is ids of attributes and value is list of cmapaign id
-    //hence complexity is O(1) and total complexity is O(m*(2^m))
+    //hence complexity is O(1) and total complexity is O(2m*(2^m))
     public List<Integer> findAllMatchedCampaigns(List<Integer> attributes){
+        //sorting is O(mlogm)
         Collections.sort(attributes);
         List<String> allPovibleAttributesVariants = getAllPosibleAttributes(attributes);
         List matchedCampaigns = new LinkedList();
